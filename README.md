@@ -49,9 +49,11 @@ cd k8s-fullstack-mysql-app/k8s-manifests
 kubectl apply -f mysql-secret.yaml
 kubectl apply -f mysql-pv-pvc.yaml
 kubectl apply -f db-deployment.yaml
+kubectl apply -f app-config.yaml
 kubectl apply -f api-deployment.yaml
 kubectl apply -f web-deployment.yaml
 kubectl apply -f adminer.yaml
+
 ```
 
 ### 3. Verify Deployments & Services  
