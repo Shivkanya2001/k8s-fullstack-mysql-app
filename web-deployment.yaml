@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web
+  labels:
+    app: web
 spec:
   replicas: 1
   selector:
@@ -14,23 +16,27 @@ spec:
     spec:
       containers:
         - name: web
-          image: shivkanyadoiphode/microservicesdeployment-web:latest
+          image: shivkanyadoiphode/microservicesdeployment-web:v1.3.0
+
           ports:
             - containerPort: 80
-          env:
-            - name: API_URL
-              value: http://api:3000
+          envFrom:
+            - configMapRef:
+                name: app-config # ✅ use app-config instead of web-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: web
+  labels:
+    app: web
 spec:
+  type: NodePort
   selector:
     app: web
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 80
-  type: NodePort
-
+      nodePort: 30666

@@ -12,13 +12,14 @@ spec:
 
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: Service
 metadata:
-  name: mysql-pvc
+  name: api-service
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-    
+  type: NodePort
+  selector:
+    app: api
+  ports:
+    - port: 4000
+      targetPort: 4000
+      nodePort: 30001
