@@ -5,7 +5,7 @@ metadata:
   labels:
     app: api
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: api
@@ -14,13 +14,15 @@ spec:
       labels:
         app: api
     spec:
+      imagePullSecrets:
+        - name: ecr-creds # required on minikube to pull from ECR
       containers:
         - name: api
-          image: shivkanyadoiphode/microservicesdeployment-api:latest
+          image: 269272824078.dkr.ecr.us-east-1.amazonaws.com/shivkanyadoiphode:api-v1
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 4000 # match app-config PORT
+            - containerPort: 4000
           env:
-            # ConfigMap values
             - name: PORT
               valueFrom:
                 configMapKeyRef:
@@ -31,7 +33,6 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: CORS_ORIGIN
-            # DB values from Secret
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
@@ -47,14 +48,30 @@ spec:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_DATABASE
-            # Static values
             - name: DB_HOST
-              value: db
+              value: db # if using RDS, replace with the RDS endpoint
             - name: DB_PORT
               value: "3306"
-          # No need to override args if PORT is from env
           command: ["node", "server.js"]
-
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
 ---
 apiVersion: v1
 kind: Service
@@ -65,10 +82,8 @@ metadata:
 spec:
   selector:
     app: api
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: http
-      protocol: TCP
-      port: 4000 # cluster-wide port
-      targetPort: 4000 # container port
-      nodePort: 32370 # stable NodePort for Minikube
+      port: 4000
+      targetPort: 4000
